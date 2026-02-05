@@ -44,12 +44,9 @@ def display_characters(df: pd.DataFrame | None = None) -> None:
         df = st.session_state.get("neptunia_randomised_characters")
         if df is None:
             st.warning(
-                "Randomised character list not found. Showing sorted list of all characters.",
+                "Unable to fetch randomised character list. Please try again.",
                 icon=":material/error:",
             )
-
-            links = [get_character_link(str(character)) for character in Characters]
-            df = pd.DataFrame(links, columns=["Name"])
 
     st.dataframe(
         df,

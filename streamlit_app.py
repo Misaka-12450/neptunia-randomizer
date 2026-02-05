@@ -19,7 +19,7 @@ def _get_random_indices(n: int) -> list[int]:
         return random.sample(range(NUM_CHARACTERS), n)
 
     try:
-        return GenerateIntegers(0, NUM_CHARACTERS - 1, n).post()
+        return GenerateIntegers(0, NUM_CHARACTERS - 1, n, replacement=False).post()
     except RandomOrgAPIException:
         st.warning(
             "Random.org API error encountered. Falling back to local randomisation.",

@@ -1,9 +1,15 @@
 [project]
 name = "neptunia-randomizer"
-version = "0.1.0"
+version = "0.2.0"
 description = "Generate a random list of Neptunia character names"
 requires-python = ">=3.14"
-dependencies = ["pandas","streamlit"]
+dependencies = [
+    "pandas~=2.3.3",
+    "streamlit~=1.53.1",
+    "requests",
+]
 
 [dependency-groups]
-dev = ["black"]
+dev = [
+    "pandas-stubs~=2.3.3"
+]

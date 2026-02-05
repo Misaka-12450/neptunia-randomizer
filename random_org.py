@@ -80,7 +80,9 @@ class GenerateIntegers(RandomOrgRequest):
             data = response.json()
         except json.JSONDecodeError as e:
             raise RandomOrgAPIException(f"Invalid JSON response: {e}")
-        if data.get("error"):
-            raise RandomOrgAPIException(response)
+
+        if error_info := data.get("error"):
+            error_message = error_info.get("message") or json.dumps(error_info)
+            raise RandomOrgAPIException(error_message)
 
         return data.get("result", {}).get("random", {}).get("data", [])

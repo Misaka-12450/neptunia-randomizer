@@ -1,168 +1,42 @@
-import pandas as pd
-import streamlit as st
 import random
 
-CHARACTERS: list = [
-    "5pb.",
-    "Abaddon",
-    "Abnes",
-    "Affimojas",
-    "Ai Masujima",
-    "Anonydeath",
-    "Arfoire",
-    "Artisan",
-    "Artura Arrima",
-    "Azna=Leb",
-    "B-Sha",
-    "Bamo",
-    "Blanc",
-    "Blossom Aisen",
-    "Bouquet",
-    "Broccoli",
-    "C-Sha",
-    "Cave",
-    "CFW Brave",
-    "CFW Judge",
-    "CFW Magic",
-    "CFW Trick",
-    "Cheekama",
-    "Cheetah",
-    "Chian",
-    "Chika Hakozaki",
-    "Chrome",
-    "Chuko",
-    "Compa",
-    "Copypaste",
-    "Croire",
-    "CyberConnect2",
-    "Dark Black",
-    "Dark CPU",
-    "Dark Green",
-    "Dark Knight",
-    "Dark Purple",
-    "Dark White",
-    "DCD",
-    "Deco",
-    "Demon King Jester",
-    "Dengekiko",
-    "Dogoo Lady",
-    "Dogoo Man",
-    "Dreamcast",
-    "Ein Al",
-    "Estelle",
-    "Ester Zira",
-    "Fair",
-    "Falcom",
-    "Famitsu",
-    "Filyn",
-    "Financier",
-    "Fried Shrimp",
-    "Furapura",
-    "Game Gear",
-    "Ganache",
-    "Generia G.",
-    "Gheytz",
-    "GM",
-    "God Eater",
-    "Goobs",
-    "Grim Reaper",
-    "Guild Woman",
-    "Gust",
-    "Hatsumi Sega",
-    "Histoire",
-    "Horyuchu",
-    "IF",
-    "Jade",
-    "K-Sha",
-    "Kei Jinguji",
-    "Kiria",
-    "Kurome Ankokuboshi",
-    "Kuterogi",
-    "Lady Wac",
-    "Lee-Fi",
-    "Lid",
-    "Linda",
-    "Little Rain",
-    "Luke",
-    "MAGES.",
-    "Maker",
-    "MarvelousAQL",
-    "Mega Drive",
-    "Mi",
-    "Miamoato",
-    "Million Arthur",
-    "Mina Nishizawa",
-    "Mine",
-    "Minotauros",
-    "Mister Badd",
-    "Moru",
-    "Nepgear",
-    "Nepgya",
-    "Neptune",
-    "Next-Gen Mech",
-    "Nisa",
-    "Nitroplus",
-    "Noire",
-    "Older Brother",
-    "Order Woman",
-    "Overlord Momus",
-    "Paix St. Gliss",
-    "Peashy",
-    "Pippin@",
-    "Plutia",
-    "Poona",
-    "Ram",
-    "Raw Meat",
-    "RED",
-    "Regu",
-    "Rei Ryghts",
-    "Resta",
-    "Rom",
-    "Ryuka",
-    "S-Sha",
-    "Sango",
-    "Saori",
-    "Sega Saturn",
-    "Singe",
-    "Steamax",
-    "Stella",
-    "Sting",
-    "Tamsoft",
-    "Tekken",
-    "Tiara",
-    "Time Eater",
-    "Tsunemi",
-    "Turquoise",
-    "Umio",
-    "Uni",
-    "Uranus",
-    "Uzume Tennouboshi",
-    "Vert",
-    "Vio",
-    "Warechu",
-    "Wyn",
-    "Younger Brother",
-    "Yu",
-    "Yurina",
-    "Yuzusuki",
-    "Yvoire",
-    "Zolgelicoff Tetsu",
-    "†Black Cat Princess†",
-]
-NUM_CHARACTERS: int = len(CHARACTERS)
+import pandas as pd
+import streamlit as st
+
+from characters import Characters
+from random_org import GenerateIntegers, RandomOrgAPIException
+
 URL_BASE: str = "https://neptunia.fandom.com/wiki/"
+NUM_CHARACTERS = len(Characters)
 
 
 def get_character_link(character: str) -> str:
-    return f"{URL_BASE}{character.replace(" ","_")}"
+    return f"{URL_BASE}{character.replace(' ', '_')}"
 
 
-def randomise_characters(n: int = NUM_CHARACTERS) -> pd.DataFrame:
-    random_characters: list = random.sample(CHARACTERS, n)
-    l = []
-    for character in random_characters:
-        l.append(get_character_link(character))
-    return pd.DataFrame(l, columns=["Name"])
+def _get_random_indices(n: int) -> list[int]:
+    if not st.secrets.get("random_org_api_key"):
+        return random.sample(range(NUM_CHARACTERS), n)
+
+    try:
+        return GenerateIntegers(0, NUM_CHARACTERS - 1, n).post()
+    except RandomOrgAPIException:
+        st.warning(
+            "Random.org API error encountered. Falling back to local randomisation.",
+            icon=":material/warning:",
+        )
+        return random.sample(range(NUM_CHARACTERS), n)
+
+
+def randomise_characters(n: int | None = None) -> pd.DataFrame:
+    if not n:
+        n = NUM_CHARACTERS
+
+    random_indices = _get_random_indices(n)
+
+    names = [str(Characters(i)) for i in random_indices]
+    links = [get_character_link(str(Characters(i))) for i in random_indices]
+    return pd.DataFrame({"Name": names, "Wiki": links})
 
 
 def display_characters(df: pd.DataFrame | None = None) -> None:
@@ -171,18 +45,18 @@ def display_characters(df: pd.DataFrame | None = None) -> None:
         if df is None:
             st.warning(
                 "Randomised character list not found. Showing sorted list of all characters.",
-                icon=":material:error:",
+                icon=":material/error:",
             )
-            l = []
-            for character in CHARACTERS:
-                l.append(get_character_link(character))
-            df = pd.DataFrame(l, columns=["Name"])
+
+            links = [get_character_link(str(character)) for character in Characters]
+            df = pd.DataFrame(links, columns=["Name"])
 
     st.dataframe(
         df,
         column_config={
-            "Name": st.column_config.LinkColumn(
-                display_text=rf"{URL_BASE}([\s\S]+)",
+            "Wiki": st.column_config.LinkColumn(
+                # display_text=rf"{URL_BASE}([\s\S]+)"
+                display_text="🔗 Link"
             )
         },
     )
@@ -209,6 +83,5 @@ with st.form("settings"):
             {"neptunia_randomised_characters": randomise_characters(num)}
         ),
     )
-
 
 display_characters()

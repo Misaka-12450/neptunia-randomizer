@@ -29,7 +29,7 @@ def _get_random_indices(n: int) -> list[int]:
 
 
 def randomise_characters(n: int | None = None) -> pd.DataFrame:
-    if not n:
+    if not n or n > NUM_CHARACTERS:
         n = NUM_CHARACTERS
 
     random_indices = _get_random_indices(n)

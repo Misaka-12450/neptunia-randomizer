@@ -34,8 +34,9 @@ def randomise_characters(n: int | None = None) -> pd.DataFrame:
 
     random_indices = _get_random_indices(n)
 
-    names = [str(Characters(i)) for i in random_indices]
-    links = [get_character_link(str(Characters(i))) for i in random_indices]
+    characters = [Characters(i) for i in random_indices]
+    names = [str(character) for character in characters]
+    links = [get_character_link(str(character)) for character in characters]
     return pd.DataFrame({"Name": names, "Wiki": links})
 
 
